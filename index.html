@@ -13,26 +13,261 @@
         .btn-action { background: #fb923c; color: #000; transition: 0.1s; cursor: pointer; border-radius: 20px; }
         .btn-action:active { transform: scale(0.95); }
         .player-card { background: rgba(30, 41, 59, 0.5); border: 2px solid #334155; transition: 0.2s; }
-        .winner-flash { border-color: #39FF14 !important; background: #064e3b !important; box-shadow: 0 0 20px #39FF14; }
+        .winner-flash { border-color: #39FF14 !important; background: #064e3b !important; }
         
-        #game-canvas { background: #000; border: 4px solid #334155; position: relative; overflow: hidden; height: 500px; width: 100%; border-radius: 30px; }
-        .target { position: absolute; width: 120px; height: 120px; background: #ef4444; border-radius: 50%; border: 8px solid white; display: flex; align-items: center; justify-content: center; font-size: 60px; animation: pop 0.2s ease-out; box-shadow: 0 0 20px #ef4444; z-index: 10; }
+        #game-canvas { background: #000; border: 4px solid #334155; position: relative; overflow: hidden; cursor: crosshair; height: 500px; width: 100%; border-radius: 30px; }
+        .target { position: absolute; width: 120px; height: 120px; background: #ef4444; border-radius: 50%; border: 8px solid white; display: flex; align-items: center; justify-content: center; font-size: 60px; animation: pop 0.2s ease-out; box-shadow: 0 0 20px #ef4444; }
         @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-
-        /* Solid Dark Background for Adult Portal */
-        #adult-portal { background-color: #020617; } 
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col p-4">
 
     <!-- SETUP SCREEN -->
     <div id="screen-setup" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-9xl neon-orange mb-2 italic tracking-tighter uppercase font-black">GARRISON KIDS</h1>
+        <h1 class="text-9xl neon-orange mb-2 italic tracking-tighter">GARRISON KIDS</h1>
         <p class="text-slate-500 mb-10 tracking-[1em] text-sm uppercase">Unit Enrollment Terminal</p>
 
         <div class="flex gap-10 w-full max-w-6xl h-[550px]">
-            <div class="flex-1 bg-slate-900 rounded-[50px] p-8 hud-border flex flex-col justify-between text-left">
+            <!-- Registration Form -->
+            <div class="flex-1 bg-slate-900 rounded-[50px] p-8 hud-border flex flex-col justify-between">
                 <div>
-                    <input id="kid-name" type="text" placeholder="CODENAME" class="w-full bg-black text-5xl p-6 border-4 border-slate-700 mb-6 rounded-3xl uppercase text-center outline-none focus:border-orange-500">
+                    <input id="kid-name" type="text" placeholder="ENTER CODENAME" class="w-full bg-black text-5xl p-6 border-4 border-slate-700 mb-6 rounded-3xl uppercase text-center outline-none focus:border-orange-500">
                     <div class="relative w-full h-64 bg-black rounded-3xl overflow-hidden border-4 border-slate-800 mb-6">
-                        <video id="video" class
+                        <video id="video" class="w-full h-full object-cover scale-x-[-1]" autoplay playsinline></video>
+                        <canvas id="canvas" class="hidden"></canvas>
+                    </div>
+                </div>
+                <button onclick="addRecruit()" class="w-full btn-action text-5xl py-8 font-black italic uppercase">Enroll Recruit</button>
+            </div>
+
+            <!-- Unit Roster -->
+            <div class="w-96 flex flex-col">
+                <h2 class="text-2xl mb-4 text-slate-400 italic uppercase">Active Roster:</h2>
+                <div id="setup-list" class="space-y-4 overflow-y-auto flex-grow mb-6"></div>
+                <button id="start-btn" onclick="startGame()" class="hidden w-full bg-white text-black py-10 rounded-[40px] text-5xl font-black uppercase shadow-2xl">Launch</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN GAME HUB -->
+    <div id="screen-main" class="hidden h-full grid grid-cols-12 gap-8">
+        
+        <!-- LEADERBOARD (LEFT) -->
+        <div class="col-span-3 flex flex-col gap-6">
+            <div class="bg-slate-900/90 rounded-[50px] p-8 border-2 border-slate-800 flex-grow shadow-2xl">
+                <h3 class="text-2xl mb-8 text-cyan-400 italic uppercase tracking-widest text-center border-b-2 border-slate-800 pb-4">Leaderboard</h3>
+                <div id="leaderboard" class="space-y-6"></div>
+            </div>
+            <button onclick="openAdultPortal()" class="bg-red-700 text-white p-10 rounded-[40px] text-center font-black uppercase text-3xl shadow-2xl active:scale-95 transition-all">
+                OFFICER COMMAND
+            </button>
+        </div>
+
+        <!-- ACTION CENTER (RIGHT) -->
+        <div class="col-span-9 flex flex-col">
+            <div id="mission-container" class="bg-slate-900 rounded-[60px] p-12 flex-grow flex flex-col border-4 border-slate-700 shadow-2xl relative overflow-hidden">
+                
+                <div class="flex justify-between items-center mb-12">
+                    <div id="mission-type-tag" class="bg-orange-500 text-black px-10 py-3 rounded-full font-black text-3xl uppercase italic">Field Activity</div>
+                    <div id="game-info" class="text-3xl text-slate-500 font-mono tracking-tighter uppercase">Status: Active</div>
+                </div>
+
+                <div id="content-area" class="flex-grow flex flex-col items-center justify-center">
+                    <!-- Physical Activity Display -->
+                    <p id="mission-text" class="text-7xl text-center leading-tight italic font-black uppercase mb-12">Waiting for Command...</p>
+                    <button id="finish-btn" onclick="submitMission()" class="w-full btn-action text-7xl py-16 font-black uppercase shadow-[0_0_50px_rgba(251,146,60,0.4)]">I DID IT!</button>
+                    
+                    <!-- Digital Game Canvas (Rare) -->
+                    <div id="game-canvas" class="hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OFFICER COMMAND (ADULT GRADING & QUIZ) -->
+    <div id="adult-portal" class="fixed inset-0 bg-slate-950/98 z-[100] hidden p-10 flex flex-col">
+        <div class="flex justify-between items-center mb-10 border-b-4 border-red-600 pb-8">
+            <h1 class="text-7xl text-red-600 font-black italic uppercase">Officer Command</h1>
+            <div class="flex gap-6">
+                <button onclick="startQuizMode()" class="bg-blue-600 text-white px-12 py-6 rounded-3xl text-3xl font-black uppercase italic shadow-lg">Start Quiz</button>
+                <button onclick="closeAdultPortal()" class="bg-white text-black px-12 py-6 rounded-3xl text-3xl font-black uppercase">Resume Game</button>
+            </div>
+        </div>
+        <div id="pending-list" class="flex-grow overflow-y-auto space-y-10"></div>
+    </div>
+
+    <script>
+        let players = [];
+        let pendingMissions = [];
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
+        const quizData = [
+            { q: "What is the capital of the UK?", a: "London", pts: 500 },
+            { q: "How many planets are in our solar system?", a: "8", pts: 500 },
+            { q: "What animal is known as the King of the Jungle?", a: "Lion", pts: 500 },
+            { q: "What is 20 + 30?", a: "50", pts: 500 },
+            { q: "What color is a school bus?", a: "Yellow", pts: 500 }
+        ];
+
+        // Access Camera
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(s => video.srcObject = s);
+
+        function addRecruit() {
+            const name = document.getElementById('kid-name').value.toUpperCase().trim();
+            if(!name) return;
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            players.push({ id: Date.now(), name, photo: canvas.toDataURL('image/png'), score: 0 });
+            renderSetupList();
+            document.getElementById('kid-name').value = "";
+            document.getElementById('start-btn').classList.remove('hidden');
+        }
+
+        function renderSetupList() {
+            document.getElementById('setup-list').innerHTML = players.map(p => `
+                <div class="flex items-center gap-6 bg-slate-800 p-5 rounded-3xl border-l-[12px] border-orange-500">
+                    <img src="${p.photo}" class="w-20 h-20 rounded-2xl object-cover">
+                    <div class="text-3xl">${p.name}</div>
+                </div>
+            `).join('');
+        }
+
+        function startGame() {
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-main').classList.remove('hidden');
+            updateUI();
+            nextMission();
+        }
+
+        function updateUI() {
+            const sorted = [...players].sort((a,b) => b.score - a.score);
+            document.getElementById('leaderboard').innerHTML = sorted.map((p, idx) => `
+                <div class="flex items-center gap-6 p-6 bg-slate-800/40 rounded-[35px] border-b-4 border-slate-700">
+                    <img src="${p.photo}" class="w-24 h-24 rounded-full border-4 ${idx===0?'border-yellow-400':'border-slate-500'}">
+                    <div class="flex-grow">
+                        <div class="text-2xl uppercase truncate w-32">${p.name}</div>
+                        <div class="text-5xl text-orange-400 font-black">${p.score}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function nextMission() {
+            // 10% chance for a digital game
+            const isDigital = Math.random() < 0.10;
+            if (isDigital) renderDigital(); else renderPhysical();
+        }
+
+        function renderPhysical() {
+            setMode(false);
+            const tasks = [
+                "Scout the house: Find something that starts with the letter 'P'!",
+                "Dance Battle: Everyone dance like a robot for 1 minute!",
+                "Cleanup: Put away 5 things that don't belong on the floor!",
+                "Gathering: Bring 3 different colored socks to HQ!",
+                "Exercise: Everyone do 10 star-jumps as fast as you can!",
+                "Hide and Seek: Find the best hiding spot in the kitchen!"
+            ];
+            document.getElementById('mission-text').innerText = tasks[Math.floor(Math.random() * tasks.length)];
+        }
+
+        function setMode(isDigital) {
+            const canvas = document.getElementById('game-canvas');
+            const text = document.getElementById('mission-text');
+            const btn = document.getElementById('finish-btn');
+            const tag = document.getElementById('mission-type-tag');
+            
+            if(isDigital) {
+                canvas.classList.remove('hidden'); text.classList.add('hidden'); btn.classList.add('hidden');
+                tag.innerText = "Digital Mission"; tag.className = "bg-blue-600 text-white px-10 py-3 rounded-full font-black text-3xl uppercase italic";
+            } else {
+                canvas.classList.add('hidden'); text.classList.remove('hidden'); btn.classList.remove('hidden');
+                tag.innerText = "Field Activity"; tag.className = "bg-orange-500 text-black px-10 py-3 rounded-full font-black text-3xl uppercase italic";
+            }
+        }
+
+        function renderDigital() {
+            setMode(true);
+            const gameZone = document.getElementById('game-canvas');
+            gameZone.innerHTML = `<p class="text-center mt-10 text-4xl italic uppercase font-black text-blue-400 animate-pulse">System Breach: Tap the Targets!</p>`;
+            let targetsHit = 0;
+            let gameInterval = setInterval(() => {
+                const t = document.createElement('div');
+                t.className = "target"; t.innerText = "⚡"; t.style.top = Math.random() * 70 + "%"; t.style.left = Math.random() * 80 + "%";
+                t.onclick = () => { targetsHit++; t.remove(); };
+                gameZone.appendChild(t);
+                setTimeout(() => t.remove(), 800);
+            }, 500);
+
+            setTimeout(() => {
+                clearInterval(gameInterval);
+                const pts = targetsHit * 200;
+                players.forEach(p => p.score += pts);
+                updateUI();
+                alert(`BREACH COMPLETE! UNIT REWARD: ${pts} XP`);
+                nextMission();
+            }, 8000);
+        }
+
+        function submitMission() {
+            pendingMissions.push({ text: document.getElementById('mission-text').innerText, id: Date.now() });
+            document.getElementById('finish-btn').innerText = "SENT TO OFFICER!";
+            setTimeout(() => {
+                document.getElementById('finish-btn').innerText = "I DID IT!";
+                nextMission();
+            }, 1200);
+        }
+
+        function openAdultPortal() { document.getElementById('adult-portal').classList.remove('hidden'); renderReview(); }
+        function closeAdultPortal() { document.getElementById('adult-portal').classList.add('hidden'); }
+
+        function renderReview() {
+            const list = document.getElementById('pending-list');
+            if(pendingMissions.length === 0) { list.innerHTML = `<p class="text-5xl text-center text-slate-700 mt-20 italic font-black">No missions to grade.</p>`; return; }
+            list.innerHTML = pendingMissions.map((m, mIdx) => `
+                <div class="bg-slate-900 p-12 rounded-[50px] border-4 border-red-900">
+                    <p class="text-5xl italic mb-12 uppercase font-black">"${m.text}"</p>
+                    <div class="grid grid-cols-2 gap-10">${players.map((p, pIdx) => `
+                        <div class="player-card p-10 rounded-[40px] flex flex-col items-center">
+                            <img src="${p.photo}" class="w-32 h-32 rounded-full mb-6">
+                            <p class="text-4xl font-black uppercase mb-8">${p.name}</p>
+                            <div class="grid grid-cols-2 gap-6 w-full">
+                                <button onclick="grade(${pIdx}, 500, this)" class="bg-yellow-600 py-8 rounded-3xl font-black text-3xl">+500</button>
+                                <button onclick="grade(${pIdx}, 1000, this)" class="bg-green-600 py-8 rounded-3xl font-black text-3xl">+1000</button>
+                            </div>
+                        </div>
+                    `).join('')}</div>
+                    <button onclick="finalize(${mIdx})" class="w-full bg-white text-black mt-12 py-10 rounded-[40px] text-4xl font-black uppercase italic">Finalize & Resume</button>
+                </div>
+            `).join('');
+        }
+
+        function startQuizMode() {
+            const list = document.getElementById('pending-list');
+            const q = quizData[Math.floor(Math.random() * quizData.length)];
+            list.innerHTML = `
+                <div class="bg-slate-900 p-12 rounded-[50px] border-4 border-blue-500 text-center">
+                    <p class="text-7xl font-black mb-12 italic uppercase leading-tight">"${q.q}"</p>
+                    <div class="flex flex-wrap justify-center gap-10">
+                        ${players.map((p, idx) => `
+                            <div onclick="quizWin(${idx}, ${q.pts}, this)" class="player-card p-10 rounded-[40px] flex flex-col items-center w-72 cursor-pointer border-4">
+                                <img src="${p.photo}" class="w-32 h-32 rounded-full mb-6">
+                                <p class="text-3xl font-black uppercase">${p.name}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex gap-6 justify-center mt-16">
+                        <button onclick="startQuizMode()" class="bg-blue-600 text-white px-16 py-8 rounded-3xl text-4xl font-black uppercase shadow-xl">Next Question</button>
+                        <button onclick="renderReview()" class="bg-red-700 text-white px-16 py-8 rounded-3xl text-4xl font-black uppercase italic shadow-xl">End Quiz</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function grade(pIdx, pts, el) { players[pIdx].score += pts; el.innerText = "DONE!"; el.style.background = "#39FF14"; updateUI(); }
+        function finalize(idx) { pendingMissions.splice(idx, 1); renderReview(); }
+        function quizWin(idx, pts, el) { players[idx].score += pts; el.classList.add('winner-flash'); updateUI(); setTimeout(() => el.classList.remove('winner-flash'), 500); }
+    </script>
+</body>
+</html>
